@@ -146,16 +146,20 @@ export class Operation {
    * @param interval [10] Polling interval
    * @param timeout [180] Timeout
    */
-  confirmation(confirmations?: number, interval?: number, timeout?: number) {
+  async confirmation(confirmations?: number, interval?: number, timeout?: number) {
     if (typeof confirmations !== 'undefined' && confirmations < 1) {
       throw new Error('Confirmation count must be at least 1');
     }
 
     const {
       defaultConfirmationCount,
-      confirmationPollingIntervalSecond,
       confirmationPollingTimeoutSecond,
     } = this.context.config;
+    
+    const confirmationPollingIntervalSecond = this.context.config.confirmationPollingIntervalSecond !== undefined 
+                                        ? this.context.config.confirmationPollingIntervalSecond 
+                                        : await this.context.getConfirmationPollingInterval();
+
     this._pollingConfig$.next({
       interval: interval || confirmationPollingIntervalSecond,
       timeout: timeout || confirmationPollingTimeoutSecond,
@@ -168,11 +172,11 @@ export class Operation {
         .pipe(
           switchMap(() => this.polling$),
           switchMap(() => this.currentHead$),
-          filter(head => head.header.level - this._foundAt >= conf - 1),
+          filter(head => head.header.level - this._foundAt >= conf! - 1),
           first()
         )
         .subscribe(_ => {
-          resolve(this._foundAt + (conf - 1));
+          resolve(this._foundAt + (conf! - 1));
         }, reject);
     });
   }

@@ -153,7 +153,7 @@ export class WalletOperation {
           block: head,
           expectedConfirmation: conf,
           currentConfirmation: head.header.level - foundAtBlock.header.level + 1,
-          completed: head.header.level - foundAtBlock.header.level >= conf - 1,
+          completed: head.header.level - foundAtBlock.header.level >= conf! - 1,
           isInCurrentBranch: () => this.isInCurrentBranch(head.hash),
         };
       }),

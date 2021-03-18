@@ -15,6 +15,7 @@ import { RPCBatchProvider } from './batch/rpc-batch-provider';
 import { Wallet, LegacyWalletProvider, WalletProvider } from './wallet';
 import { ParserProvider } from './parser/interface';
 import { MichelCodecParser } from './parser/michel-codec-parser';
+import BigNumber from 'bignumber.js';
 
 export interface TaquitoProvider<T, K extends Array<any>> {
   new (context: Context, ...rest: K): T;
@@ -30,8 +31,7 @@ export interface Config {
   shouldObservableSubscriptionRetry?: boolean;
 }
 
-export const defaultConfig: Required<Config> = {
-  confirmationPollingIntervalSecond: 10,
+export const defaultConfig: Partial<Config> = {
   defaultConfirmationCount: 1,
   confirmationPollingTimeoutSecond: 180,
   shouldObservableSubscriptionRetry: false
@@ -77,11 +77,11 @@ export class Context {
     this._parser = parser? parser: new MichelCodecParser(this);
   }
 
-  get config(): Required<Config> {
+  get config(): Partial<Config> {
     return this._config as any;
   }
 
-  set config(value: Required<Config>) {
+  set config(value: Partial<Config>) {
     this._config = {
       ...defaultConfig,
       ...value,
@@ -153,6 +153,22 @@ export class Context {
     }
   }
 
+  async getConfirmationPollingInterval() {
+    try {
+      const constants = await this.rpc.getConstants();
+      const confirmationPollingInterval = BigNumber.sum(constants.time_between_blocks[0], 
+             constants.delay_per_missing_endorsement!, 
+             Math.max(0, constants.initial_endorsers! - constants.endorsers_per_block));
+      return confirmationPollingInterval.toNumber();
+    } catch (exception) {
+      console.log(exception);
+    }
+    // Return default value if there is
+    // an issue returning from constants
+    // file.
+    return 10;
+  }
+  
   /**
    * @description Create a copy of the current context. Useful when you have long running operation and you do not want a context change to affect the operation
    */

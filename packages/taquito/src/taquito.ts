@@ -108,7 +108,7 @@ export class TezosToolkit {
     this.setWalletProvider(wallet);
 
     this._context.proto = protocol;
-    this._context.config = config as Required<Config>;
+    this._context.config = config as Partial<Config>;
   }
 
   /**
